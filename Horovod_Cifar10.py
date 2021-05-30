@@ -72,7 +72,7 @@ def model(model_name, epochs, batch_size, learning_rate):
 
   # compile the model with a SGD/momentum optimizer
   # and a very slow learning rate.
-  model.compile(loss='binary_crossentropy',
+  model.compile(loss='categorical_crossentropy',
                 optimizer=opt,
                 metrics=['accuracy'],
                 experimental_run_tf_function=False) # uses hvd.DistributedOptimizer()
