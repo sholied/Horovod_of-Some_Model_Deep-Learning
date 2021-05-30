@@ -19,9 +19,8 @@ parser.add_argument('--batch_size', type=int, default=32)
 parser.add_argument('--learning_rate', type=float, default=1e-3)
 parser.add_argument('--model', type=str, default='VGG16') #VGG16/VGG19
 
-#Not Jupyter Notebook
-#args = parser.parse_args()
-args = parser.parse_args([])
+args = parser.parse_args()
+#args = parser.parse_args([])
 
 # Initialize Horovod
 hvd.init()
