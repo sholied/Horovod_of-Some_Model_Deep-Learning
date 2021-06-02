@@ -134,6 +134,15 @@ model("VGG19", epochs, batch_size, learning_rate)
 model("Xception", epochs, batch_size, learning_rate)
 model("ResNet50", epochs, batch_size, learning_rate)
 
+#Batch Size 128
+epochs = 10
+batch_size = 128
+learning_rate = 1e-3
+
+model("VGG19", epochs, batch_size, learning_rate)
+model("Xception", epochs, batch_size, learning_rate)
+model("ResNet50", epochs, batch_size, learning_rate)
+
 #Batch Size 64
 epochs = 10
 batch_size = 64
