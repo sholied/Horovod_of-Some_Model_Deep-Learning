@@ -1,17 +1,21 @@
 
 """# Cifar"""
 
-import tensorflow as tf
-
-import horovod.tensorflow as hvd
 import argparse
+import math
 
+import tensorflow as tf
+from tensorflow import keras
 from tensorflow.keras import datasets, layers, Model
 from tensorflow.keras import applications
 from tensorflow.keras.applications import VGG16, VGG19, Xception, ResNet50
 from tensorflow.keras.utils import to_categorical
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.layers import Dropout, Flatten, Dense
+
+import horovod.tensorflow.keras as hvd
+
+
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--epochs', type=int, default=10)
