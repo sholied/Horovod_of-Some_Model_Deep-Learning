@@ -3,9 +3,6 @@ import argparse
 import math
 import tensorflow as tf
 from tensorflow import keras
-
-from tensorflow.keras import layers, Model
-from tensorflow.keras import applications
 from tensorflow.keras.applications import VGG19, Xception, ResNet50
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.datasets import cifar10
@@ -121,7 +118,7 @@ def model(model_name, epochs, batch_size, learning_rate):
   print("--------------Test performance--------------")
   test_loss, test_acc = model.evaluate(X_test / 255.0, Y_test, verbose = 2)
 
-  log_name = "Horovod_Cifar10_{}_{}.txt".format(model_name, batch_size)https://raw.githubusercontent.com/sholied/testing/main/Horovod_Cifar10.py
+  log_name = "Horovod_Cifar10_{}_{}.txt".format(model_name, batch_size)
   with open(log_name, "w") as f: 
     f.write("Training Time: "+ str(training_end) + "\n")
     f.write("Epochs: "+ str(epochs) + "\n")
