@@ -3,7 +3,9 @@ import argparse
 
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras.applications import VGG19, Xception, ResNet50
+from tensorflow.keras.applications.resnet50 import ResNet50
+from tensorflow.keras.applications.vgg19 import VGG19
+from tensorflow.keras.applications.xception import Xception
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.datasets import cifar100
 from tensorflow.keras.utils import to_categorical
