@@ -1,8 +1,8 @@
 import time
 import argparse
-
+import math
 import tensorflow as tf
-import horovod.tensorflow as hvd
+from tensorflow import keras
 
 from tensorflow.keras import layers, Model
 from tensorflow.keras import applications
@@ -12,6 +12,8 @@ from tensorflow.keras.datasets import cifar10
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.layers import Dropout, Flatten, Dense, UpSampling2D
+import horovod.tensorflow.keras as hvd
+
 
 # Initialize Horovod
 hvd.init()
