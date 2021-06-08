@@ -2,16 +2,14 @@ import time
 import argparse
 
 import tensorflow as tf
-import horovod.tensorflow.keras as hvd
-
-from tensorflow.keras import layers, Model
-from tensorflow.keras import applications
+from tensorflow import keras
 from tensorflow.keras.applications import VGG19, Xception, ResNet50
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.datasets import cifar100
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.layers import Dropout, Flatten, Dense, BatchNormalization, UpSampling2D
+import horovod.tensorflow.keras as hvd
 
 # Initialize Horovod
 hvd.init()
