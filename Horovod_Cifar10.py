@@ -2,7 +2,7 @@ import time
 import argparse
 
 import tensorflow as tf
-import horovod.tensorflow.keras as hvd
+import horovod.tensorflow as hvd
 
 from tensorflow.keras import layers, Model
 from tensorflow.keras import applications
@@ -119,7 +119,7 @@ def model(model_name, epochs, batch_size, learning_rate):
   print("--------------Test performance--------------")
   test_loss, test_acc = model.evaluate(X_test / 255.0, Y_test, verbose = 2)
 
-  log_name = "Horovod_Cifar10_{}_{}.txt".format(model_name, batch_size)
+  log_name = "Horovod_Cifar10_{}_{}.txt".format(model_name, batch_size)https://raw.githubusercontent.com/sholied/testing/main/Horovod_Cifar10.py
   with open(log_name, "w") as f: 
     f.write("Training Time: "+ str(training_end) + "\n")
     f.write("Epochs: "+ str(epochs) + "\n")
