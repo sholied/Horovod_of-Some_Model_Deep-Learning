@@ -3,6 +3,7 @@ import argparse
 import math
 import tensorflow as tf
 from tensorflow import keras
+from tensorflow.keras import datasets
 from tensorflow.keras.applications.resnet50 import ResNet50
 from tensorflow.keras.applications.vgg19 import VGG19
 from tensorflow.keras.applications.xception import Xception
@@ -27,7 +28,11 @@ parser.add_argument('--lr', type=float, default=0.001, metavar='LR',
 args = parser.parse_args()
 
 
-
+print("MODEL =", args.model)
+print("Dataset =", args.dataset)
+print("batch size =", args.batchsize)
+print("learning rate =", args.lr)
+print("epoch =", args.epochs)
 
 # Initialize Horovod
 hvd.init()
@@ -150,8 +155,10 @@ log_name = "Horovod_Cifar10_{}_{}.txt".format(model_name, batch_size)
 with open(log_name, "w") as f: 
   f.write("Training Time: "+ str(training_end) + "\n")
   f.write("Epochs: "+ str(epochs) + "\n")
-  f.write("Test Accuracy: "+ str(test_acc) + "\n")
-  
+  f.write("Batch Size: "+ str(batch_size) + "\n")
+  f.write("lerning rate: "+ str(learning_rate) + "\n")
+  f.write("Dataset: "+ str(args.dataset) + "\n")
+  f.write("Test Accuracy: "+ str(test_acc) + "\n")  
   
 """
 return parser.add_argument_group(model_name, epochs, batch_size, learning_rate)
