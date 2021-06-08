@@ -3,7 +3,7 @@
 
 import tensorflow as tf
 
-import horovod.tensorflow.keras as hvd
+import horovod.tensorflow as hvd
 import argparse
 
 from tensorflow.keras import datasets, layers, Model
