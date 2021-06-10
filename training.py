@@ -64,38 +64,36 @@ epochs = args.epochs
 batch_size = args.batchsize
 learning_rate = args.lr
 
-def model(model_name, epochs, batch_size, learning_rate):
-  if(model_name == 'VGG19'):
-    base_model = VGG19(weights='imagenet', include_top=False, input_shape=(32, 32, 3))
+if(model_name == 'VGG19'):
+  base_model = VGG19(weights='imagenet', include_top=False, input_shape=(32, 32, 3))
 
-    model = Sequential()
-    model.add(base_model)
-    model.add(Flatten())
-    model.add(Dense(256))
-    model.add(Dense(64))
-    model.add(Dense(10, activation='softmax'))
-  elif(model_name == 'Xception'):
-    base_model = Xception(weights='imagenet', include_top=False, input_shape=(96, 96, 3))
+  model = Sequential()
+  model.add(base_model)
+  model.add(Flatten())
+  model.add(Dense(256))
+  model.add(Dense(64))
+  model.add(Dense(10, activation='softmax'))
+elif(model_name == 'Xception'):
+  base_model = Xception(weights='imagenet', include_top=False, input_shape=(96, 96, 3))
 
-    model = Sequential()
-    model.add(UpSampling2D(size=(3,3)))
-    model.add(base_model)
-    model.add(Flatten())
-    model.add(Dense(256))
-    model.add(Dense(64))
-    model.add(Dense(10, activation='softmax'))
-  elif(model_name == 'ResNet50'):
-    base_model = ResNet50(weights='imagenet', include_top=False, input_shape=(32, 32, 3))
+  model = Sequential()
+  model.add(UpSampling2D(size=(3,3)))
+  model.add(base_model)
+  model.add(Flatten())
+  model.add(Dense(256))
+  model.add(Dense(64))
+  model.add(Dense(10, activation='softmax'))
+elif(model_name == 'ResNet50'):
+  base_model = ResNet50(weights='imagenet', include_top=False, input_shape=(32, 32, 3))
 
-    model = Sequential()
-    model.add(base_model)
-    model.add(Flatten())
-    model.add(Dense(256))
-    model.add(Dense(64))
-    model.add(Dense(10, activation='softmax'))
-  else:
-    return print("Model not found.")
-
+  model = Sequential()
+  model.add(base_model)
+  model.add(Flatten())
+  model.add(Dense(256))
+  model.add(Dense(64))
+  model.add(Dense(10, activation='softmax'))
+else:
+  print("Model not found.")
 # Horovod: adjust learning rate based on number of GPUs.
 opt = tf.optimizers.SGD(learning_rate * hvd.size(), momentum=0.9)
 
