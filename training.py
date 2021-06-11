@@ -11,9 +11,6 @@ from tensorflow.keras.datasets import cifar10
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.layers import Dropout, Flatten, Dense, UpSampling2D
-import keras
-from keras import backend as K
-
 import horovod.tensorflow.keras as hvd
 
 
@@ -21,11 +18,13 @@ import horovod.tensorflow.keras as hvd
 hvd.init()
 
 # Horovod: pin GPU to be used to process local rank (one GPU per process)
-config = tf.ConfigProto()
-config.gpu_options.allow_growth = True
-config.gpu_options.visible_device_list = str(hvd.local_rank())
-K.set_session(tf.Session(config=config))
-    
+gpus = tf.config.experimental.list_physical_devices('GPU')
+print("Num GPUs Available: ", len(gpus))
+
+for gpu in gpus:
+    tf.config.experimental.set_memory_growth(gpu, True)
+if gpus:
+    tf.config.experimental.set_visible_devices(gpus[hvd.local_rank()], 'GPU')   
 # Dataset
 num_classes = 10
 
@@ -34,6 +33,7 @@ Y_train = to_categorical(y_train, num_classes)
 Y_test = to_categorical(y_test, num_classes)
 
 def model(model_name, epochs, batch_size, learning_rate):
+  tf.keras.backend.clear_session()
   if(model_name == 'VGG19'):
     base_model = VGG19(weights='imagenet', include_top=False, input_shape=(32, 32, 3))
 
