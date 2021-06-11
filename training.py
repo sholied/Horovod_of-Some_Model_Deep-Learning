@@ -13,7 +13,7 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.layers import Dropout, Flatten, Dense, UpSampling2D
 import horovod.tensorflow.keras as hvd
 
-
+tf.keras.backend.clear_session()
 # Initialize Horovod
 hvd.init()
 
@@ -131,7 +131,6 @@ batch_size = 256
 learning_rate = 1e-3
 
 model("VGG19", epochs, batch_size, learning_rate)
-tf.keras.backend.clear_session()
 model("Xception", epochs, batch_size, learning_rate)
 model("ResNet50", epochs, batch_size, learning_rate)
 
