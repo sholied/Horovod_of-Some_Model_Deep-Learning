@@ -33,7 +33,6 @@ Y_train = to_categorical(y_train, num_classes)
 Y_test = to_categorical(y_test, num_classes)
 
 def model(model_name, epochs, batch_size, learning_rate):
-  tf.keras.backend.clear_session()
   if(model_name == 'VGG19'):
     base_model = VGG19(weights='imagenet', include_top=False, input_shape=(32, 32, 3))
 
@@ -132,6 +131,7 @@ batch_size = 256
 learning_rate = 1e-3
 
 model("VGG19", epochs, batch_size, learning_rate)
+tf.keras.backend.clear_session()
 model("Xception", epochs, batch_size, learning_rate)
 model("ResNet50", epochs, batch_size, learning_rate)
 
