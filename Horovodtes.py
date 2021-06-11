@@ -59,7 +59,7 @@ epochs = args.epochs
 batch_size = args.batchsize
 learning_rate = args.lr
 
-if(model_name == 'VGG19'):
+def model1():
   base_model = VGG19(weights='imagenet', include_top=False, input_shape=(32, 32, 3))
   model = Sequential()
   model.add(base_model)
@@ -68,7 +68,7 @@ if(model_name == 'VGG19'):
   model.add(Dense(64))
   model.add(Dense(10, activation='softmax'))
   
-elif(model_name == 'Xception'):
+def model2():
   base_model = Xception(weights='imagenet', include_top=False, input_shape=(96, 96, 3))
   model = Sequential()
   model.add(UpSampling2D(size=(3,3)))
@@ -77,7 +77,8 @@ elif(model_name == 'Xception'):
   model.add(Dense(256))
   model.add(Dense(64))
   model.add(Dense(10, activation='softmax'))
-elif(model_name == 'ResNet50'):
+  
+def model3():
   base_model = ResNet50(weights='imagenet', include_top=False, input_shape=(32, 32, 3))
   model = Sequential()
   model.add(base_model)
@@ -85,9 +86,16 @@ elif(model_name == 'ResNet50'):
   model.add(Dense(256))
   model.add(Dense(64))
   model.add(Dense(10, activation='softmax'))
+
+if (model_name == 'VGG19'):
+  model = model1
+elif (model_name == 'Xception'):
+  model = model2
+elif (model_name == 'ResNet50'):
+  model = model3
 else :
-  print("----------------please insert model or model not found---------------")
-  
+  print ("Model Not Found.")
+ 
 # Horovod: adjust learning rate based on number of GPUs.
 opt = tf.optimizers.SGD(learning_rate * hvd.size(), momentum=0.9)
 
