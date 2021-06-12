@@ -65,9 +65,14 @@ base_model = ResNet50(weights='imagenet', include_top=False, input_shape=(32, 32
 model = Sequential()
 model.add(base_model)
 model.add(Flatten())
-model.add(Dense(256))
-model.add(Dense(64))
-model.add(Dense(10, activation='softmax'))
+if (num_classes==100):
+  model.add(Dense(512))
+  model.add(Dense(128))
+  model.add(Dense(100, activation='softmax'))
+elif (num_classes == 10):
+  model.add(Dense(256))
+  model.add(Dense(64))
+  model.add(Dense(10, activation='softmax'))
 
 # Horovod: adjust learning rate based on number of GPUs.
 opt = tf.optimizers.SGD(learning_rate * hvd.size(), momentum=0.9)
