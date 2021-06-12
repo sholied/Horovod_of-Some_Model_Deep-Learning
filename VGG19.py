@@ -41,11 +41,12 @@ if gpus:
     tf.config.experimental.set_visible_devices(gpus[hvd.local_rank()], 'GPU')
     
 # Dataset
-num_classes = 10
 
 if (args.dataset == "cifar10"):
+  num_classes = 10
   (X_train, y_train), (X_test, y_test) = cifar10.load_data()
 elif (args.dataset == "cifar100"):
+  num_classes = 100
   (X_train, y_train), (X_test, y_test) = cifar100.load_data()
 else:
   print("Dataset not found.")
