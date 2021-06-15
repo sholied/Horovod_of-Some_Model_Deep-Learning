@@ -123,32 +123,22 @@ def model(model_name, epochs, batch_size, learning_rate):
   log_name = "Horovod_Cifar10_{}_{}.txt".format(model_name, batch_size)
   with open(log_name, "w") as f: 
     f.write("Training Time: "+ str(training_end) + "\n")
+    f.write("Model: "+ str(model_name) + "\n")
     f.write("Epochs: "+ str(epochs) + "\n")
+    f.write("Batch Size: "+ str(batch_size) + "\n")
+    f.write("lerning rate: "+ str(learning_rate) + "\n")
     f.write("Test Accuracy: "+ str(test_acc) + "\n")
-    
-#Batch Size 256
-epochs = 10
-batch_size = 256
-learning_rate = 1e-3
 
-model("VGG19", epochs, batch_size, learning_rate)
-model("Xception", epochs, batch_size, learning_rate)
-model("ResNet50", epochs, batch_size, learning_rate)
 
-#Batch Size 128
-epochs = 10
-batch_size = 128
-learning_rate = 1e-3
-
-model("VGG19", epochs, batch_size, learning_rate)
-model("Xception", epochs, batch_size, learning_rate)
-model("ResNet50", epochs, batch_size, learning_rate)
-
-#Batch Size 64
-epochs = 10
-batch_size = 64
-learning_rate = 1e-3
-
-model("VGG19", epochs, batch_size, learning_rate)
-model("Xception", epochs, batch_size, learning_rate)
-model("ResNet50", epochs, batch_size, learning_rate)
+#VGG19
+model("VGG19", epochs=10, batch_size=256, learning_rate=1e-3)
+model("VGG19", epochs=10, batch_size=128, learning_rate=1e-3)
+model("VGG19", epochs=10, batch_size=64, learning_rate=1e-3)
+#resnet50
+model("ResNet50", epochs=10, batch_size=256, learning_rate=1e-3)
+model("ResNet50", epochs=10, batch_size=128, learning_rate=1e-3)
+model("ResNet50", epochs=10, batch_size=64, learning_rate=1e-3)
+#Xception
+model("Xception", epochs=10, batch_size=64, learning_rate=1e-3)
+model("Xception", epochs=10, batch_size=128, learning_rate=1e-3)
+model("Xception", epochs=10, batch_size=256, learning_rate=1e-3)
