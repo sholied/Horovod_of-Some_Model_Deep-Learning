@@ -1,22 +1,20 @@
 import time
 import argparse
-
+import math
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras.applications.resnet50 import ResNet50
 from tensorflow.keras.applications.vgg19 import VGG19
 from tensorflow.keras.applications.xception import Xception
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.datasets import cifar10, cifar100
+from tensorflow.keras.datasets import cifar10
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from tensorflow.keras.layers import Dropout, Flatten, Dense, BatchNormalization, UpSampling2D
+from tensorflow.keras.layers import Dropout, Flatten, Dense, UpSampling2D
 import horovod.tensorflow.keras as hvd
 
-parser = argparse.ArgumentParser(description='Tensorflow Horovod')
-parser.add_argument('-dataset', type=str, default="cifar10", metavar='cifar10', help="Datasets cifar10 dan cifar100")
-args = parser.parse_args()
-
+#clear cache
+tf.keras.backend.clear_session()
 
 # Initialize Horovod
 hvd.init()
@@ -29,65 +27,43 @@ for gpu in gpus:
     tf.config.experimental.set_memory_growth(gpu, True)
 if gpus:
     tf.config.experimental.set_visible_devices(gpus[hvd.local_rank()], 'GPU')
-   
+    
 # Dataset
-if (args.dataset == "Cifar10"):
-  num_classes = 10
-  (X_train, Y_train), (X_test, Y_test) = cifar10.load_data()
-elif (args.dataset == "Cifar100"):
-  num_classes = 100
-  (X_train, Y_train), (X_test, Y_test) = cifar100.load_data()
-else:
-  print("Dataset not found.")
+num_classes = 10
+
+(X_train, y_train), (X_test, y_test) = cifar10.load_data()
+Y_train = to_categorical(y_train, num_classes)
+Y_test = to_categorical(y_test, num_classes)
 
 def model(model_name, epochs, batch_size, learning_rate):
-  #model VGG19
   if(model_name == 'VGG19'):
-    #base_model = getattr(applications, model_name)(weights='imagenet', include_top=False, input_shape=(32, 32, 3))
     base_model = VGG19(weights='imagenet', include_top=False, input_shape=(32, 32, 3))
+
     model = Sequential()
     model.add(base_model)
     model.add(Flatten())
-    if (num_classes==100):
-      model.add(Dense(512))
-      model.add(Dense(128))
-      model.add(Dense(100, activation='softmax'))
-    elif (num_classes == 10):
-      model.add(Dense(256))
-      model.add(Dense(64))
-      model.add(Dense(10, activation='softmax'))
-    #model.summary()
-
-  #model Xception
+    model.add(Dense(256))
+    model.add(Dense(64))
+    model.add(Dense(10, activation='softmax'))
   elif(model_name == 'Xception'):
     base_model = Xception(weights='imagenet', include_top=False, input_shape=(96, 96, 3))
+
     model = Sequential()
     model.add(UpSampling2D(size=(3,3)))
     model.add(base_model)
     model.add(Flatten())
-    if (num_classes==100):
-      model.add(Dense(512))
-      model.add(Dense(128))
-      model.add(Dense(100, activation='softmax'))
-    elif (num_classes == 10):
-      model.add(Dense(256))
-      model.add(Dense(64))
-      model.add(Dense(10, activation='softmax'))
-  
-  #Model Resnet    
+    model.add(Dense(256))
+    model.add(Dense(64))
+    model.add(Dense(10, activation='softmax'))
   elif(model_name == 'ResNet50'):
     base_model = ResNet50(weights='imagenet', include_top=False, input_shape=(32, 32, 3))
+
     model = Sequential()
     model.add(base_model)
     model.add(Flatten())
-    if (num_classes==100):
-      model.add(Dense(512))
-      model.add(Dense(128))
-      model.add(Dense(100, activation='softmax'))
-    elif (num_classes == 10):
-      model.add(Dense(256))
-      model.add(Dense(64))
-      model.add(Dense(10, activation='softmax'))
+    model.add(Dense(256))
+    model.add(Dense(64))
+    model.add(Dense(10, activation='softmax'))
   else:
     return print("Model not found.")
 
@@ -146,7 +122,7 @@ def model(model_name, epochs, batch_size, learning_rate):
   print("--------------Test performance--------------")
   test_loss, test_acc = model.evaluate(X_test / 255.0, Y_test, verbose = 2)
 
-  log_name = "Horovod_{}_{}_{}.txt".format(args.dataset, model_name, batch_size)
+  log_name = "Horovod_Cifar10_{}_{}.txt".format(model_name, batch_size)
   with open(log_name, "w") as f: 
     f.write("Training Time: "+ str(training_end) + "\n")
     f.write("Model: "+ str(model_name) + "\n")
