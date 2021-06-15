@@ -13,6 +13,8 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.layers import Dropout, Flatten, Dense, UpSampling2D
 import horovod.tensorflow.keras as hvd
 
+#clear cache
+tf.keras.backend.clear_session()
 
 # Initialize Horovod
 hvd.init()
