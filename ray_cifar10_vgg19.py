@@ -1,3 +1,9 @@
+"""
+#Train a simple deep CNN on the CIFAR10 small images dataset.
+
+It gets to 75% validation accuracy in 25 epochs, and 79% after 50 epochs.
+(it"s still underfitting at that point, though).
+"""
 import argparse
 import time
 
@@ -6,12 +12,11 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, Activation, Flatten
 from tensorflow.keras.layers import Conv2D, MaxPooling2D
+from tensorflow.keras.applications.vgg19 import VGG19
 import os
 from filelock import FileLock
-from tensorflow.keras.applications import VGG19
 
 import ray
-ray.init()
 from ray.util.sgd.tf.tf_trainer import TFTrainer
 
 num_classes = 10
@@ -40,15 +45,9 @@ input_shape = x_train.shape[1:]
 
 def create_model(config):
     import tensorflow as tf
-    base_model = VGG19(weights='imagenet', include_top=False, input_shape=(32, 32, 3))
-
-    model = Sequential()
-    model.add(base_model)
-    model.add(Flatten())
-    model.add(Dense(256))
-    model.add(Dense(64))
-    model.add(Dense(10, activation='softmax'))
-
+    model = VGG19( include_top=True, weights='imagenet', input_tensor=None, 
+            input_shape=None, pooling=None, classes=num_classes,
+            classifier_activation='softmax')
 
     # initiate RMSprop optimizer
     opt = tf.keras.optimizers.RMSprop(lr=0.001, decay=1e-6)
@@ -57,6 +56,7 @@ def create_model(config):
     model.compile(
         loss="categorical_crossentropy", optimizer=opt, metrics=["accuracy"])
     return model
+
 
 def data_creator(config):
     import tensorflow as tf
@@ -70,6 +70,7 @@ def data_creator(config):
         len(x_train)).batch(batch_size)
     test_dataset = test_dataset.repeat().batch(batch_size)
     return train_dataset, test_dataset
+
 
 def _make_generator(x_train, y_train, batch_size):
     # This will do preprocessing and realtime data augmentation:
@@ -103,11 +104,12 @@ def _make_generator(x_train, y_train, batch_size):
         data_format=None,
         # fraction of images reserved for validation (strictly between 0 and 1)
         validation_split=0.0)
-    
-     # Compute quantities required for feature-wise normalization
+
+    # Compute quantities required for feature-wise normalization
     # (std, mean, and principal components if ZCA whitening is applied).
     datagen.fit(x_train)
     return datagen.flow(x_train, y_train, batch_size=batch_size)
+
 
 def data_augmentation_creator(config):
     import tensorflow as tf
@@ -125,6 +127,66 @@ def data_augmentation_creator(config):
     test_dataset = test_dataset.repeat().batch(batch_size)
     return trainset, test_dataset
 
+
+def main(smoke_test,
+         num_replicas,
+         use_gpu=False,
+         augment_data=False,
+         batch_size=32):
+    data_size = 60000
+    test_size = 10000
+    batch_size = batch_size
+
+    num_train_steps = 10 if smoke_test else data_size // batch_size
+    num_eval_steps = 10 if smoke_test else test_size // batch_size
+
+    trainer = TFTrainer(
+        model_creator=create_model,
+        data_creator=(data_augmentation_creator
+                      if augment_data else data_creator),
+        num_replicas=num_replicas,
+        use_gpu=use_gpu,
+        verbose=True,
+        config={
+            "batch_size": batch_size,
+            "fit_config": {
+                "steps_per_epoch": num_train_steps,
+            },
+            "evaluate_config": {
+                "steps": num_eval_steps,
+            }
+        })
+
+    training_start = time.time()
+    num_epochs = 1 if smoke_test else 3
+    for i in range(num_epochs):
+        # Trains num epochs
+        train_stats1 = trainer.train()
+        train_stats1.update(trainer.validate())
+        print(f"iter {i}:", train_stats1)
+
+    dt = (time.time() - training_start) / 3
+    print(f"Training on workers takes: {dt:.3f} seconds/epoch")
+
+    model = trainer.get_model()
+    trainer.shutdown()
+    dataset, test_dataset = data_augmentation_creator(
+        dict(batch_size=batch_size))
+
+    training_start = time.time()
+    model.fit(dataset, steps_per_epoch=num_train_steps, epochs=1)
+    dt = (time.time() - training_start)
+    print(f"Training on workers takes: {dt:.3f} seconds/epoch")
+
+    scores = model.evaluate(test_dataset, steps=num_eval_steps)
+    print("Test loss:", scores[0])
+    print("Test accuracy:", scores[1])
+    print("address", args.address)
+    print("epochs", num_epochs)
+    print("batch_size", batch_size)
+    print("num of GPU", use_gpu )
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -139,7 +201,7 @@ if __name__ == "__main__":
         default=1,
         help="Sets number of replicas for training.")
     parser.add_argument(
-        "--batch-size", type=int, default=32, help="Sets batch size.")
+        "--batch-size", type=int, default=64, help="Sets batch size.")
     parser.add_argument(
         "--use-gpu",
         action="store_true",
@@ -159,64 +221,12 @@ if __name__ == "__main__":
     args, _ = parser.parse_known_args()
     if args.smoke_test:
         ray.init(num_cpus=2)
-    # else:
-    #     ray.init(address=args.address)
-    data_size = 60000
-    test_size = 10000
-    batch_size = args.batch_size
+    else:
+        ray.init(address=args.address)
 
-num_train_steps = 10 if args.smoke_test else data_size // batch_size
-num_eval_steps = 10 if args.smoke_test else test_size // batch_size
-
-trainer = TFTrainer(
-        model_creator=create_model,
-        data_creator=(data_augmentation_creator
-                      if args.augment_data else data_creator),
-        num_replicas=args.num_replicas,
+    main(
+        smoke_test=args.smoke_test,
+        batch_size=args.batch_size,
+        augment_data=args.augment_data,
         use_gpu=args.use_gpu,
-        verbose=True,
-        config={
-            "batch_size": batch_size,
-            "fit_config": {
-                "steps_per_epoch": num_train_steps,
-            },
-            "evaluate_config": {
-                "steps": num_eval_steps,
-            }
-        })
-
-training_start = time.time()
-num_epochs = 1 if args.smoke_test else 3
-for i in range(num_epochs):
-        # Trains num epochs
-        train_stats1 = trainer.train()
-        train_stats1.update(trainer.validate())
-        print(f"iter {i}:", train_stats1)
-
-dt = (time.time() - training_start) / 3
-print(f"Training on workers takes: {dt:.3f} seconds/epoch")
-
-model = trainer.get_model()
-trainer.shutdown()
-dataset, test_dataset = data_augmentation_creator(
-dict(batch_size=batch_size))
-
-training_start = time.time()
-model.fit(dataset, steps_per_epoch=num_train_steps, epochs=1)
-dt = (time.time() - training_start)
-print(f"Training on workers takes: {dt:.3f} seconds/epoch")
-
-scores = model.evaluate(test_dataset, steps=num_eval_steps)
-print("Test loss:", scores[0])
-print("Test accuracy:", scores[1])
-
-
-training_end = dt
-
-log_name = "RaySGD_cifar10_vg19_{}.txt".format(batch_size)
-with open(log_name, "w") as f: 
-  f.write("Training Time: "+ str(training_end) + "\n")
-  f.write("Epochs: "+ str(num_train_steps) + "\n")
-  f.write("Batch Size: "+ str(batch_size) + "\n")
-  f.write("Test Loss: "+ str(scores[0]) + "\n")
-  f.write("Test Accuracy: "+ str(scores[1]) + "\n")
+        num_replicas=args.num_replicas)
