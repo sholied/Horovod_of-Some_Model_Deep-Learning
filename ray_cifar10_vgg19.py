@@ -44,11 +44,13 @@ input_shape = x_train.shape[1:]
 
 
 def create_model(config):
-    import tensorflow as tf
-    model = VGG19( include_top=True, weights='imagenet', input_tensor=None, 
-            input_shape=None, pooling=None, classes=num_classes,
-            classifier_activation='softmax')
-
+    base_model = VGG19(weights='imagenet', include_top=False, input_shape=(32, 32, 3))
+    model = Sequential()
+    model.add(base_model)
+    model.add(Flatten())
+    model.add(Dense(256))
+    model.add(Dense(64))
+    model.add(Dense(10, activation='softmax'))
     # initiate RMSprop optimizer
     opt = tf.keras.optimizers.RMSprop(lr=0.001, decay=1e-6)
 
