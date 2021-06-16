@@ -6,7 +6,7 @@ It gets to 75% validation accuracy in 25 epochs, and 79% after 50 epochs.
 """
 import argparse
 import time
-
+import tensorflow as tf
 from tensorflow.keras.datasets import cifar10
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.models import Sequential
@@ -160,7 +160,7 @@ def main(smoke_test,
         })
 
     training_start = time.time()
-    num_epochs = 1 if smoke_test else 3
+    num_epochs = 10 if smoke_test else 3
     for i in range(num_epochs):
         # Trains num epochs
         train_stats1 = trainer.train()
