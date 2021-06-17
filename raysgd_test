@@ -1,0 +1,154 @@
+import argparse
+import time
+
+from tensorflow.keras.datasets import cifar10
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Dropout, Activation, Flatten
+from tensorflow.keras.layers import Conv2D, MaxPooling2D
+import os
+from filelock import FileLock
+from tensorflow.keras.applications import VGG19, Xception, ResNet50
+
+import ray
+import tensorflow as tf
+from ray.util.sgd.tf.tf_trainer import TFTrainer
+
+ray.init()
+
+def create_model(config):
+    base_model = VGG19(weights='imagenet', include_top=False, input_shape=(32, 32, 3))
+
+    model = Sequential()
+    model.add(base_model)
+    model.add(Flatten())
+    model.add(Dense(256))
+    model.add(Dense(64))
+    model.add(Dense(10, activation='softmax'))
+
+    # initiate optimizer
+    opt = tf.optimizers.SGD(learning_rate=0.01, momentum=0.9)
+
+
+    # Let"s train the model using RMSprop
+    model.compile(
+        loss="categorical_crossentropy", optimizer=opt, metrics=["accuracy"])
+    return model
+    
+    
+num_classes = 10
+def fetch_keras_data():
+    import tensorflow as tf
+    # The data, split between train and test sets:
+    with FileLock(os.path.expanduser("~/.cifar.lock")):
+        (x_train, y_train), (x_test, y_test) = cifar10.load_data()
+
+    # Convert class vectors to binary class matrices.
+    y_train = tf.keras.utils.to_categorical(y_train, num_classes)
+    y_test = tf.keras.utils.to_categorical(y_test, num_classes)
+
+    x_train = x_train.astype("float32")
+    x_test = x_test.astype("float32")
+    x_train /= 255
+    x_test /= 255
+    return (x_train, y_train), (x_test, y_test)
+
+def simple_dataset(config):
+    (x_train, y_train), (x_test, y_test) = fetch_keras_data()
+    train_dataset = tf.data.Dataset.from_tensor_slices((x_train, y_train))
+    test_dataset = tf.data.Dataset.from_tensor_slices((x_test, y_test))
+
+    # Repeat is needed to avoid
+    train_dataset = train_dataset.repeat().shuffle(
+        len(x_train)).batch(batch_size)
+    test_dataset = test_dataset.repeat().batch(batch_size)
+    return train_dataset, test_dataset
+    
+data_size = 60000
+test_size = 10000
+batch_size = 256
+    
+num_train_steps = data_size // batch_size
+num_eval_steps = test_size // batch_size
+
+NUM_OF_GPUS = 1
+
+trainer = TFTrainer(
+    model_creator=create_model,
+    data_creator=simple_dataset,
+    num_replicas=NUM_OF_GPUS,
+    use_gpu=True,
+    verbose=True,
+    config={
+        "batch_size": batch_size,
+        "fit_config": {
+            "steps_per_epoch": num_train_steps,
+        },
+        "evaluate_config": {
+            "steps": num_eval_steps,
+        }
+    })
+
+training_start = time.time()
+num_epochs = 3
+for i in range(num_epochs):
+  # Trains num epochs
+  train_stats1 = trainer.train()
+  train_stats1.update(trainer.validate())
+  print(f"iter {i}:", train_stats1)
+
+dt = (time.time() - training_start) / 3
+print(f"Training on workers takes: {dt:.3f} seconds/epoch")
+
+
+data_size = 60000
+test_size = 10000
+batch_size = 256
+    
+num_train_steps = data_size // batch_size
+num_eval_steps = test_size // batch_size
+
+NUM_OF_GPUS = 1
+
+trainer = TFTrainer(
+    model_creator=create_model,
+    data_creator=simple_dataset,
+    num_replicas=NUM_OF_GPUS,
+    use_gpu=True,
+    verbose=True,
+    config={
+        "batch_size": batch_size,
+        "fit_config": {
+            "steps_per_epoch": num_train_steps,
+        },
+        "evaluate_config": {
+            "steps": num_eval_steps,
+        }
+    })
+
+training_start = time.time()
+num_epochs = 3
+for i in range(num_epochs):
+  # Trains num epochs
+  train_stats1 = trainer.train()
+  train_stats1.update(trainer.validate())
+  print(f"iter {i}:", train_stats1)
+
+dt = (time.time() - training_start)
+print(f"Training on workers takes: {dt:.3f} seconds (all epochs)")
+
+NUM_TRAIN_STEPS_2 = 500
+EPOCHS = 2
+
+model = trainer.get_model()
+trainer.shutdown()
+dataset, test_dataset = simple_dataset(dict(batch_size=batch_size))
+
+training_start = time.time()
+model.fit(dataset, steps_per_epoch=NUM_TRAIN_STEPS_2, epochs=EPOCHS)
+dt = (time.time() - training_start)
+print(f"Training on workers takes: {dt:.3f} seconds/epoch")
+
+scores = model.evaluate(test_dataset, steps=num_eval_steps)
+print("Test loss:", scores[0])
+print("Test accuracy:", scores[1])
