@@ -62,9 +62,18 @@ def model(model_name, epochs, batch_size, learning_rate, steps_per_epoch):
   else:
     return print("Model not found.")
 
+  (cifar10_images, cifar10_labels), _ = tf.keras.datasets.cifar10.load_data()
+
+  dataset = tf.data.Dataset.from_tensor_slices(
+      (tf.cast(cifar10_images[..., tf.newaxis] / 255.0, tf.float32),
+              tf.cast(cifar10_labels, tf.int64))
+  )
+  dataset = dataset.repeat().shuffle(10000).batch(batch_size)
+
   # Horovod: adjust learning rate based on number of GPUs.
-  scaled_lr = learning_rate * hvd.size()
-  opt = tf.optimizers.Adam(scaled_lr)
+  # scaled_lr = learning_rate * hvd.size()
+  # opt = tf.optimizers.Adam(scaled_lr)
+  opt = tf.optimizers.SGD(learning_rate * hvd.size(), momentum=0.9)
 
   # Horovod: add Horovod DistributedOptimizer.
   opt = hvd.DistributedOptimizer(
@@ -92,7 +101,7 @@ def model(model_name, epochs, batch_size, learning_rate, steps_per_epoch):
       # Horovod: using `lr = 1.0 * hvd.size()` from the very beginning leads to worse final
       # accuracy. Scale the learning rate `lr = 1.0` ---> `lr = 1.0 * hvd.size()` during
       # the first three epochs. See https://arxiv.org/abs/1706.02677 for details.
-      hvd.callbacks.LearningRateWarmupCallback(initial_lr=scaled_lr, warmup_epochs=3, verbose=1),
+      #hvd.callbacks.LearningRateWarmupCallback(initial_lr=scaled_lr, warmup_epochs=3, verbose=1),
   ]
 
   # Horovod: save checkpoints only on worker 0 to prevent other workers from corrupting them.
