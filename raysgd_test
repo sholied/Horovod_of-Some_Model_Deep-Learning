@@ -14,6 +14,7 @@ import ray
 import tensorflow as tf
 from ray.util.sgd.tf.tf_trainer import TFTrainer
 
+ray.shutdown()
 ray.init()
 
 def create_model(config):
@@ -95,7 +96,7 @@ for i in range(num_epochs):
   # Trains num epochs
   train_stats1 = trainer.train()
   train_stats1.update(trainer.validate())
-  print(f"iter {i}:", train_stats1)
+  print(f"iter {i+1}:", train_stats1)
 
 dt = (time.time() - training_start) / 3
 print(f"Training on workers takes: {dt:.3f} seconds/epoch")
